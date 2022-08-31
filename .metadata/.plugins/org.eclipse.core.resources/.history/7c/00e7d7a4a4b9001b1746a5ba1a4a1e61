@@ -1,0 +1,185 @@
+<%@ page import="com.cabit.Cab_It.model.Order" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.time.LocalDateTime" %>
+<%@ page import="com.cabit.Cab_It.helper.AccessPrivilegeHelper" %>
+<%@ page import="com.cabit.Cab_It.model.Customer" %>
+<%@ page import="com.cabit.Cab_It.model.Admin" %>
+<%@ page import="com.cabit.Cab_It.helper.DateTimeHelper" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+
+	<head>
+	    <meta charset="UTF-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <title>Orders</title>
+	    <link rel="stylesheet" href="CSS/style3.css">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">    
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+	</head>
+
+	<body>
+	    <%
+	        if(session.getAttribute("logged-customer") == null && session.getAttribute("logged-admin") == null)
+	        {
+	            response.sendRedirect("/Cab_It/login");
+	            return;
+	        }
+	        AccessPrivilegeHelper accessPrivilegeHelper = new AccessPrivilegeHelper();
+	        Customer loggedCustomer = (Customer) session.getAttribute("logged-customer");
+	        Admin loggedAdmin = (Admin) session.getAttribute("logged-admin");
+	
+	        if (!accessPrivilegeHelper.checkAccessPrivilegesForOrder(loggedCustomer, "read") &&
+	            !accessPrivilegeHelper.checkAccessPrivilegesForOrder(loggedAdmin, "read"))
+	        {
+	            response.sendRedirect("/Cab_It/error/no-access.jsp");
+	            return;
+	        }
+	    %>
+	
+	    <div class="head-te">
+	 		<h2>Orders here..</h2>
+	 		<br>
+		    
+	    <%
+	        if(session.getAttribute("logged-admin") != null)
+	        {
+	            if(session.getAttribute("order-delete-status") != null)
+	            {
+	                Object orderDeleteStatus = session.getAttribute("order-delete-status");
+	
+	                if(orderDeleteStatus.toString().equals("success"))
+	                {
+	                    out.println("<font color='blue'>");
+	                    out.println("<h3>Order deleted successfully!</h3>");
+	                    out.println("</font>");
+	                }
+	                else
+	                {
+	                    out.println("<font color='red'>");
+	                    out.println("<h3>Order did not deleted successfully!</h3>");
+	                    out.println("</font>");
+	                }
+	                session.removeAttribute("order-delete-status");
+            	}
+            %>
+	            <h5>Fetching criteria</h5>
+			    <a href="/Cab_It/fetch/order?asc">Requested date time in ASC</a><br>
+			    <a href="/Cab_It/fetch/order">Requested date time in DESC</a>
+			</div>
+            <% 
+	            List<Order> orders = (List<Order>) session.getAttribute("orders");
+	
+	            int numAcceptedOrders = 0;
+	            int numNonAcceptedOrders = 0;
+	
+	            for(Order order : orders)
+	            {
+	                if(order.getResponse() != null)
+	                    numAcceptedOrders++;
+	
+	                else
+	                    numNonAcceptedOrders++;
+	            }
+	            out.println("<div class='btn-container'>");
+	            	out.println("<font color='blue'>");
+	           
+			            out.println(String.format(
+			                    "<h3>Number of Accepted orders yet: %s / %s</h3>", numAcceptedOrders, numAcceptedOrders + numNonAcceptedOrders)
+			            );
+	           		out.println("</font>");
+
+		            out.println("<font color='red'>");
+			            out.println(String.format(
+			                    "<h3>Number of Non-accepted orders yet: %s / %s</h3><br><br>", numNonAcceptedOrders, numAcceptedOrders + numNonAcceptedOrders)
+			            );
+		            out.println("</font>");
+	            out.println("</div>");
+	        }
+	    %>
+		<%
+	        DateTimeHelper dateTimeHelper = new DateTimeHelper();
+	        List<Order> orders = (List<Order>) session.getAttribute("orders");
+	
+	        String titleTemplate = "<h3>%s</h3><br>";
+	        String fieldTemplate = "<p><b> %s </b> : %s </p>";
+	
+	        for(Order order : orders)
+	        {
+	            String customerId = order.getCustomer().getId();
+	            String vehicleId = order.getVehicle().getId();
+	            String fromLocation = order.getFromLocation().getDistrict();
+	            String toLocation = order.getToLocation().getDistrict();
+	            String requestedOn =  order.getRequestedDateTime().toString();
+	            String requestedDateTime = "On: ".concat(dateTimeHelper.formatDateTimeStr(requestedOn));
+	            LocalDateTime acceptedOn = order.getRespondedDateTime();
+	            String acceptedDateTime = "Not Yet";
+	
+	            if(acceptedOn != null)
+	            {
+	                String acceptedOnDt = acceptedOn.toString();
+	
+	                acceptedDateTime = dateTimeHelper.formatDateTimeStr(acceptedOnDt);
+	            }
+	            String review = order.getReview();
+	
+	            out.println("<div class='row'>");
+	            	out.println("<div class='column'>");
+	            		out.println("<div class='card'>");
+	            			out.println("<div class='container'>");
+	            				out.println(String.format(titleTemplate, requestedDateTime));
+	            				out.println(String.format(fieldTemplate, "Customer-ID", customerId));
+	            				out.println(String.format(fieldTemplate, "Vehicle-ID", vehicleId));
+	            				out.println(String.format(fieldTemplate, "Journey start", fromLocation));
+	            				out.println(String.format(fieldTemplate, "Journey end", toLocation));
+	            				out.println(String.format(fieldTemplate, "Accepted on", acceptedDateTime));
+	            
+	            if(session.getAttribute("logged-customer") != null) {
+	                if (review == null) {
+	                    out.println("<form action='/Cab_It/review/order' method='POST'>");
+	                    out.println("<br><br>");
+	                    
+	                    out.println("<h2 id='make-review'>Make some review :</h2>");
+	                    out.println("<textarea name='review'></textarea>");
+	                    out.println(String.format("<input type='text' hidden='true' value='%s' name='customer-id'>", order.getCustomer().getId()));
+	                    out.println(String.format("<input type='text' hidden='true' value='%s' name='vehicle-id'>", order.getVehicle().getId()));
+	                    out.println(String.format("<input type='text' hidden='true' value='%s' name='from-location-id'>", order.getFromLocation().getId()));
+	                    out.println(String.format("<input type='text' hidden='true' value='%s' name='to-location-id'>", order.getToLocation().getId()));
+	                    out.println(String.format("<input type='text' hidden='true' value='%s' name='req-date-time'>", order.getRequestedDateTime()));
+	
+	                    out.println("<input type='submit' value='Post' id='signup-btn-4'> ");
+	                    out.println("</form>");
+	                } else 
+                    	out.println(String.format(fieldTemplate, "Review", review));
+	            }
+	            else if(review != null)
+	                out.println(String.format(fieldTemplate, "Review", review));
+				
+			            	out.println("</div>");
+		   			 	out.println("</div>");
+		   			out.println("</div>");
+		    	out.println("</div>");
+		    	
+	            if(session.getAttribute("logged-admin") != null) {
+	
+	                out.println("<form action='/Cab_It/order/delete.jsp' method='POST'>");
+	
+	                out.println(String.format("<input type='text' hidden='true' value='%s' name='del-customer-id'>", order.getCustomer().getId()));
+	                out.println(String.format("<input type='text' hidden='true' value='%s' name='del-vehicle-id'>", order.getVehicle().getId()));
+	                out.println(String.format("<input type='text' hidden='true' value='%s' name='del-from-location-id'>", order.getFromLocation().getId()));
+	                out.println(String.format("<input type='text' hidden='true' value='%s' name='del-to-location-id'>", order.getToLocation().getId()));
+	                out.println(String.format("<input type='text' hidden='true' value='%s' name='del-req-date-time'>", order.getRequestedDateTime()));
+	                out.println("<input type='submit' value='Delete' id='signup-btn-3'>");
+	
+	                out.println("</form>");
+	            }
+	        }
+	    %>
+	    <form action="/Cab_It/dashboard">
+	        <input type="submit" value="Dashboard" id="signup-btn-1">
+	    </form>
+	</body>
+
+</html>

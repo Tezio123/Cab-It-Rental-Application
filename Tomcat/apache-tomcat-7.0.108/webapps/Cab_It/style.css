@@ -1,0 +1,88 @@
+@charset "ISO-8859-1";
+*{
+    margin: 0;
+    padding: 0;
+  
+}
+
+  body{
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  /* Full-width inputs */
+  input[type=text], input[type=password] {
+    width: 100%;
+    padding: 14px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    box-sizing: border-box;
+    border: 1px solid rgb(224, 224, 224);
+    border-radius: 5px;
+  }
+  .container{
+   background-color: rgb(255, 255, 255);
+   width: 450px;
+   height:450px;
+   position: absolute;
+   margin-left: 530px;
+   margin-top: 130px;
+   border-radius: 20px;
+   border: 1px solid rgb(224, 224, 224);
+  }
+  .main-container{
+    padding: 20px;
+    margin: 20px;
+  }
+  .head-te{
+    padding: 20px;
+    margin: 20px;
+  }
+  .head-te h2{
+    color: rgb(82, 82, 82);
+    text-align: left;
+    font-size: 33px;
+  }
+
+  #login-btn {
+    background-color: red;
+    color: white;
+    padding: 14px 30px;
+    margin: 8px 0;
+    border: none;
+    cursor: pointer;
+    width: 80%;
+    border-radius: 30px;
+    margin-left: 44px;
+    font-size: 20px;
+    margin-top: 35px;
+  }
+  #login-btn:hover{
+    background-color: rgb(211, 5, 5);
+    
+  }
+  .an-btn a{
+    text-decoration: none;
+    color: rgb(107, 107, 107);
+    text-align: center;
+    font-size: 15px;
+  }
+ #invalid-btn{
+ 	color:red;
+ 	font-size:20px;
+ 	text-align:center;
+ 	margin-top:-320px;
+ }
+ 
+
+  @media only screen and (max-width: 600px) {
+    .container{
+      background-color: rgb(255, 255, 255);
+      width: 320px;
+      height:450px;
+      position: absolute;
+      margin-left: 22px;
+      margin-top: 130px;
+      border-radius: 20px;
+      border: 1px solid rgb(224, 224, 224);
+     }
+  }

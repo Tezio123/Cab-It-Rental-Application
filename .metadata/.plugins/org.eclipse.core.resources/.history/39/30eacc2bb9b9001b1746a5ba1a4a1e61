@@ -1,0 +1,172 @@
+<%@ page import="com.cabit.Cab_It.model.Advertisement" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Base64" %>
+<%@ page import="com.cabit.Cab_It.model.Admin" %>
+<%@ page import="com.cabit.Cab_It.service.AdvertisementService" %>
+<%@ page import="com.cabit.Cab_It.model.Customer" %>
+<%@ page import="com.cabit.Cab_It.model.Employee" %>
+<%@ page import="com.cabit.Cab_It.helper.AccessPrivilegeHelper" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+    <head>
+        <title>Advertisement Search</title>
+        <meta charset="UTF-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <link rel="stylesheet" href="CSS/style4.css">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">    
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+    </head>
+
+    <body>
+	    <%
+	        if(session.getAttribute("logged-admin") == null &&
+	                session.getAttribute("logged-employee") == null &&
+	                session.getAttribute("logged-customer") == null)
+	        {
+	            response.sendRedirect("/Cab_It/login");
+	            return;
+	        }
+	        AccessPrivilegeHelper accessPrivilegeHelper = new AccessPrivilegeHelper();
+	
+	        if(session.getAttribute("logged-admin") != null) {
+	            Admin loggedAdmin = (Admin) session.getAttribute("logged-admin");
+	
+	            if (!accessPrivilegeHelper.checkAccessPrivilegesForAdvertisement(loggedAdmin, "read")) {
+	                response.sendRedirect("/Cab_It/error/no-access.jsp");
+	            }
+	        }
+	        else if(session.getAttribute("logged-customer") != null) {
+	            Customer loggedCustomer = (Customer) session.getAttribute("logged-customer");
+	
+	            if (!accessPrivilegeHelper.checkAccessPrivilegesForAdvertisement(loggedCustomer, "read")) {
+	                response.sendRedirect("/Cab_It/error/no-access.jsp");
+	            }
+	        }
+	        else if(session.getAttribute("logged-employee") != null) {
+	            Employee loggedEmployee = (Employee) session.getAttribute("logged-employee");
+	
+	            if (!accessPrivilegeHelper.checkAccessPrivilegesForAdvertisement(loggedEmployee, "read")) {
+	                response.sendRedirect("/Cab_It/error/no-access.jsp");
+	            }
+	        }
+	        else
+	            return;
+	    %>
+		
+		<div class="head-te">
+	         <h2>Find an advertisement here</h2>
+        
+	    <%
+	        Object advertisementRegisterStatus = session.getAttribute("advertisement-register-status");
+	        Object advertisementUpdateStatus = session.getAttribute("advertisement-update-status");
+	        Object advertisementDeleteStatus = session.getAttribute("advertisement-delete-status");
+	
+	        if(advertisementRegisterStatus != null)
+	        {
+	            if(advertisementRegisterStatus.toString().equals("success"))
+	            {
+	                out.println("<font color='blue'>");
+	                out.println("<br><h4>Advertisement Registered Successfully!</h4>");
+	                out.println("</font>");
+	            }
+	            session.removeAttribute("advertisement-register-status");
+	        }
+	        else if(advertisementUpdateStatus != null)
+	        {
+	            if(advertisementUpdateStatus.toString().equals("success"))
+	            {
+	                out.println("<font color='blue'>");
+	                out.println("<br><h4>Advertisement Updated Successfully!</h4>");
+	                out.println("</font>");
+	            }
+	            session.removeAttribute("advertisement-update-status");
+	        }
+	
+	        else if(advertisementDeleteStatus != null)
+	        {
+	            if(advertisementDeleteStatus.toString().equals("success"))
+	            {
+	                out.println("<font color='blue'>");
+	                out.println("<br><h4>Advertisement Deleted Successfully!</h4>");
+	            }
+	
+	            else if(advertisementDeleteStatus.toString().equals("invalid"))
+	            {
+	                out.println("<font color='red'>");
+	                out.println("<br><h4>Advertisement in-use or unable to delete</h4>");
+	            }
+	            out.println("</font>");
+	            session.removeAttribute("advertisement-delete-status");
+	        }
+	    %>
+		</div>
+		
+		<div class="main-container">
+	         <form action="/Cab_It/fetch/advertisement" method="POST">
+                 <input type="text" placeholder="Advertisement-ID.." name="advertisement-id"">
+             	<button type="submit" >Search</button>
+             </form>
+             
+             <form action="/Cab_It/dashboard">
+                 <input type="submit" value="Dashboard" id="signup-btn-1">
+             </form>
+             
+           <br>
+        </div>
+
+	    <%
+	        Object fetchResult = session.getAttribute("advertisement-fetch-result");
+	
+	        if(fetchResult != null)
+	        {
+	            if (!fetchResult.toString().equals("not-found"))
+	            {
+	                List<Advertisement> advertisements = (List<Advertisement>) session.getAttribute("advertisement-fetch-result");
+	
+	                String titleTemplate = "<h3>%s</h3>";
+	                String fieldTemplate = "<p><b>%s</b> : %s </p>";
+	                String hyperlinkTemplate = "<a href='%s'>%s</a>";
+	                String imageTemplate = "<img src='%s'><br>";
+	
+	                for(Advertisement advertisement : advertisements)
+	                {
+	                    String id = advertisement.getId();
+	                    String content = advertisement.getContent();
+	                    String photoUrl = "data:image/jpg;base64," + Base64.getEncoder().encodeToString(advertisement.getPhoto());
+						
+	                    out.println("<div class='row'>");
+	                    	out.println("<div class='column'>");
+	                    		out.println("<div class='card'>");
+	                    			out.println("<div class='image-btn'>");
+	                    				out.println(String.format(imageTemplate, photoUrl));
+	                    			out.print("</div>");
+	                    			
+	                    			out.println("<div class='container'>");
+	                    				out.println("<div class='content'>");
+	                    					out.println(String.format(titleTemplate, id));
+	                    					out.println(String.format(fieldTemplate, "Content", content));
+	                    				out.print("</div>");
+	
+	                    if(session.getAttribute("logged-admin") != null) {
+	                        out.println(String.format(hyperlinkTemplate, "/Cab_It/update/advertisement?id=".concat(id), "<h4 id='signup-btn-2'>Update</h4>"));
+	                        out.println(String.format(hyperlinkTemplate, "/Cab_It/delete/advertisement?id=".concat(id), "<h4 id='signup-btn-3'>Delete</h4>"));
+	                    }
+	
+	                    			out.print("</div>");
+	                    		out.print("</div>");
+	                    	out.print("</div>");
+	                    out.print("</div>");
+	                }
+	            }
+	            else if(fetchResult.toString().equals("not-found"))
+	            {
+	            	out.println("<center><h3>Advertisement not found!</h3></center>");
+	            }
+	            session.removeAttribute("advertisement-fetch-result");
+	        }
+	    %>
+    </body>
+</html>

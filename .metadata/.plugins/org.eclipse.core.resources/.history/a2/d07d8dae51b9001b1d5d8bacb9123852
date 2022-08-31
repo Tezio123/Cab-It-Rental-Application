@@ -1,0 +1,136 @@
+<%@ page import="com.cabit.Cab_It.model.Location" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.cabit.Cab_It.helper.AccessPrivilegeHelper" %>
+<%@ page import="com.cabit.Cab_It.model.Admin" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+	<head>
+	    <meta charset="UTF-8">
+	    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+	    <title>Search Location</title>
+	    <link rel="stylesheet" href="CSS/style3.css">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">    
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+	</head>
+    <body>
+        <%
+            if(session.getAttribute("logged-admin") == null)
+            {
+                response.sendRedirect("/Cab_It/login");
+                return;
+            }
+            AccessPrivilegeHelper accessPrivilegeHelper = new AccessPrivilegeHelper();
+            Admin loggedAdmin = (Admin) session.getAttribute("logged-admin");
+
+            if (!accessPrivilegeHelper.checkAccessPrivilegesForLocation(loggedAdmin, "read")) {
+                response.sendRedirect("/Cab_It/error/no-access.jsp");
+                return;
+            }
+        %>
+		
+		<div class="head-te">
+        	<h3>Find a location here</h3>
+
+        <%
+            Object locationRegisterStatus = session.getAttribute("location-register-status");
+            Object locationUpdateStatus = session.getAttribute("location-update-status");
+            Object locationDeleteStatus = session.getAttribute("location-delete-status");
+
+            if(locationRegisterStatus != null)
+            {
+                if(locationRegisterStatus.toString().equals("success"))
+                {
+                    out.println("<font color='blue'>");
+                    out.println("<br><h4>Location Registered Successfully!</h4>");
+                    out.println("</font>");
+                }
+                session.removeAttribute("location-register-status");
+            }
+            else if(locationUpdateStatus != null)
+            {
+                if(locationUpdateStatus.toString().equals("success"))
+                {
+                    out.println("<font color='blue'>");
+                    out.println("<br><h4>Location Updated Successfully!</h4>");
+                    out.println("</font>");
+                }
+                session.removeAttribute("location-update-status");
+            }
+
+            else if(locationDeleteStatus != null)
+            {
+                if(locationDeleteStatus.toString().equals("success"))
+                {
+                    out.println("<font color='blue'>");
+                    out.println("<br><h4>Location Deleted Successfully!</h4>");
+                }
+
+                else if(locationDeleteStatus.toString().equals("invalid"))
+                {
+                    out.println("<font color='red'>");
+                    out.println("<br><h4>Location in-use or unable to delete</h4>");
+                }
+                out.println("</font>");
+                session.removeAttribute("location-delete-status");
+            }
+        %>
+        </div>
+
+        <div class="main-container">
+             <form action="/Cab_It/fetch/location" method="POST">
+                <input type="text" placeholder="Location-ID.." name="location-id">
+             	<button type="submit" >Search</button>
+             </form>
+             <form action="/Cab_It/dashboard">
+                 <input type="submit" value="Dashboard" id="signup-btn-1">
+             </form>
+             <br>
+       	</div>
+
+        <%
+            Object fetchResult = session.getAttribute("location-fetch-result");
+
+            if(fetchResult != null)
+            {
+                if (!fetchResult.toString().equals("not-found"))
+                {
+                    List<Location> locations = (List<Location>) session.getAttribute("location-fetch-result");
+
+                    String titleTemplate = "<h3>%s</h3>";
+                    String fieldTemplate = "<p><b> %s </b>  : %s </p>";
+                    String hyperlinkTemplate = "<a href='%s'>%s</a>";
+
+                    for(Location location : locations)
+                    {
+                        String id = location.getId();
+                        String district = location.getDistrict();
+                        String zone = location.getZone();
+
+                        out.println("<div class='row'>");
+                        	out.println("<div class='column'>");
+                        		out.println("<div class='card'>");
+                        			out.println("<div class='container'>");
+                        				out.println(String.format(titleTemplate, id));
+                        				out.println("<br><br>");
+				                        out.println(String.format(fieldTemplate, "District", district));
+				                        out.println(String.format(fieldTemplate, "Zone", zone));
+				                        out.println(String.format(hyperlinkTemplate, "/Cab_It/update/location?id=".concat(id), "<h4 id='signup-btn-2'>Update</h4>"));
+				                        out.println(String.format(hyperlinkTemplate, "/Cab_It/delete/location?id=".concat(id), "<h4 id='signup-btn-3'>Delete</h4>"));
+                        			out.println("</div>");
+                        		out.println("</div>");
+                        	out.println("</div>");
+                        out.println("</div>");
+                    }
+                }
+                else if(fetchResult.toString().equals("not-found"))
+                {
+                	out.println("<center><h3>Location not found!</h3></center>");
+                }
+                session.removeAttribute("location-fetch-result");
+            }
+        %>
+    </body>
+</html>

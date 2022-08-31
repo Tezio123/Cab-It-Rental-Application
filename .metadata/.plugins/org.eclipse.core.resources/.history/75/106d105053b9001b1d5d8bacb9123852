@@ -1,0 +1,94 @@
+<%@ page import="java.time.LocalTime" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="com.cabit.Cab_It.helper.AccessPrivilegeHelper" %>
+<%@ page import="com.cabit.Cab_It.model.Customer" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
+<html>
+<head>
+    <title>Rent Your Cab</title>
+</head>
+
+<body>
+    <%
+        if(session.getAttribute("logged-customer") == null)
+        {
+            response.sendRedirect("/Cab_It/login");
+            return;
+        }
+        if(session.getAttribute("start-location-id") == null || session.getAttribute("end-location-id") == null)
+        {
+            response.sendRedirect("/Cab_It/register/order");
+            return;
+        }
+        AccessPrivilegeHelper accessPrivilegeHelper = new AccessPrivilegeHelper();
+        Customer loggedCustomer = (Customer) session.getAttribute("logged-customer");
+
+        if (!accessPrivilegeHelper.checkAccessPrivilegesForOrder(loggedCustomer, "create")) {
+            response.sendRedirect("/Cab_It/error/no-access.jsp");
+            return;
+        }
+
+        Map<String, String[]> parameterMap = request.getParameterMap();
+
+        for(String key : parameterMap.keySet())
+        {
+            if(key.startsWith("VEH-"))
+            {
+                session.setAttribute("vehicle-id", key.substring(4));
+                break;
+            }
+        }
+    %>
+
+    <div  class="container">
+        <div class="head-te">
+	    		<h2>Order Confirmation</h2>
+	    </div>
+		
+		<div class="main-container">
+	    	<font color="red">
+		        <h3>
+		            Note that after 5 minutes you have no chance to make any changes to your order<br>
+		            and your order will be accepted. If you want to do any change to your order, <br>
+		            click below links before 5 minutes!
+		        </h3>
+	    	</font>
+
+		    <button onclick="doUpdate()" id="signup-btn-1">Update</button>
+		    <button onclick="doDelete()"  id="signup-btn">Delete</button>
+    	</div>
+   </div>
+
+    <script>
+        timeout = setTimeout(function () {
+            let request = new XMLHttpRequest();
+
+            request.open("POST", "/Cab_It/register/order", false);
+            request.send();
+
+            document.location="/Cab_It/order/create-step-4.jsp";
+
+        }, 5000);
+
+        function stopTimeout() {
+            clearTimeout(timeout);
+        }
+
+        function doUpdate()
+        {
+            stopTimeout();
+
+            document.location="/Cab_It/order/create-step-1.jsp";
+        }
+
+        function doDelete()
+        {
+            stopTimeout();
+
+            document.location="/Cab_It/customer/dashboard.jsp";
+        }
+    </script>
+
+</body>
+</html>

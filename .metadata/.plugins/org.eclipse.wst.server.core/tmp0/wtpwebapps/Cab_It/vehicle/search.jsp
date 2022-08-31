@@ -1,0 +1,158 @@
+<%@ page import="com.cabit.Cab_It.model.Vehicle" %>
+<%@ page import="java.time.Period" %>
+<%@ page import="java.util.Base64" %>
+<%@ page import="java.util.List" %>
+<%@ page import="com.cabit.Cab_It.helper.AccessPrivilegeHelper" %>
+<%@ page import="com.cabit.Cab_It.model.Admin" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+	<head>
+	    <title>Search Vehicle</title>
+	    <link rel="stylesheet" href="CSS/style4.css">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+	    <link rel="preconnect" href="https://fonts.gstatic.com">    
+	    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap" rel="stylesheet">
+	</head>
+	<body>
+	    <%
+	        if(session.getAttribute("logged-admin") == null)
+	        {
+	            response.sendRedirect("/Cab_It/login");
+	            return;
+	        }
+	        AccessPrivilegeHelper accessPrivilegeHelper = new AccessPrivilegeHelper();
+	        Admin loggedAdmin = (Admin) session.getAttribute("logged-admin");
+	
+	        if (!accessPrivilegeHelper.checkAccessPrivilegesForVehicle(loggedAdmin, "read")) {
+	            response.sendRedirect("/Cab_It/error/no-access.jsp");
+	            return;
+	        }
+	    %>
+	
+	    <div class="head-te">
+            <h2>Find an vehicle here</h2>
+       
+		 <%
+	        Object vehicleRegisterStatus = session.getAttribute("vehicle-register-status");
+	        Object vehicleUpdateStatus = session.getAttribute("vehicle-update-status");
+	        Object vehicleDeleteStatus = session.getAttribute("vehicle-delete-status");
+	
+	        if(vehicleRegisterStatus != null)
+	        {
+	            if(vehicleRegisterStatus.toString().equals("success"))
+	            {
+	                out.println("<font color='blue'>");
+	                out.println("<br><h4>Vehicle Registered Successfully!</h4>");
+	                out.println("</font>");
+	            }
+	            session.removeAttribute("vehicle-register-status");
+	        }
+	        else if(vehicleUpdateStatus != null)
+	        {
+	            if(vehicleUpdateStatus.toString().equals("success"))
+	            {
+	                out.println("<font color='blue'>");
+	                out.println("<br><h4>Vehicle Updated Successfully!</h4>");
+	                out.println("</font>");
+	            }
+	            session.removeAttribute("vehicle-update-status");
+	        }
+	        else if(vehicleDeleteStatus != null)
+	        {
+	            if(vehicleDeleteStatus.toString().equals("success"))
+	            {
+	                out.println("<font color='blue'>");
+	                out.println("<br><h4>Vehicle Deleted Successfully!</h4>");
+	            }
+	
+	            else if(vehicleDeleteStatus.toString().equals("invalid"))
+	            {
+	                out.println("<font color='red'>");
+	                out.println("<br><h4>Vehicle in-use or unable to delete</h4>");
+	            }
+	
+	            out.println("</font>");
+	            session.removeAttribute("vehicle-delete-status");
+	        }
+	    %>
+	    </div>
+	    
+	    <div class="main-container">
+       		<form action="/Cab_It/fetch/vehicle" method="POST">
+            	<input type="text" placeholder="Vehicle ID.." name="vehicle-id">
+            	<button type="submit" >Search</button>
+        	</form>
+        	<form action="/Cab_It/dashboard">
+            	<input type="submit" value="Dashboard" id="signup-btn-1">
+        	</form>
+       </div>
+	
+	    <%
+	        Object fetchResult = session.getAttribute("vehicle-fetch-result");
+	
+	        if(fetchResult != null)
+	        {
+	            if(!fetchResult.toString().equals("not-found"))
+	            {
+	                List<Vehicle> vehicles = (List<Vehicle>) fetchResult;
+	
+	                String titleTemplate = "<h3>%s</h3>";
+	                String imageTemplate = "<img src='%s'><br>";
+	                String fieldTemplate = "<p><b> %s </b>: %s </p>";
+	                String hyperlinkTemplate = "<a href='%s'>%s</a>";
+	
+	                for(Vehicle vehicle :  vehicles)
+	                {
+	                    String id = vehicle.getId();
+	                    String model = vehicle.getModel();
+	                    String brand = vehicle.getBrand();
+	                    String engineType = vehicle.getEngineType();
+	                    String fuelType = vehicle.getFuelType();
+	                    String topSpeed = String.valueOf(vehicle.getTopSpeed());
+	                    String plateNumber = vehicle.getPlateNumber();
+	                    Period servicePeriod = vehicle.getServiceTime();
+	                    String serviceTime = "(New Vehicle)";
+	                    String photoUrl = "data:image/jpg;base64," + Base64.getEncoder().encodeToString(vehicle.getPhoto());
+	
+	                    if(servicePeriod.getYears() > 0)
+	                        serviceTime = String.valueOf(servicePeriod.getYears()).concat(" years");
+	                    else if(servicePeriod.getMonths() > 0)
+	                        serviceTime = String.valueOf(servicePeriod.getMonths()).concat(" months");
+	                    else if(servicePeriod.getDays() > 0)
+	                        serviceTime = String.valueOf(servicePeriod.getDays()).concat(" days");
+						
+	                    out.println("<div class='row'>");
+	                    	out.println("<div class='column'>");
+	                    		out.println("<div class='card'>");
+	                    			out.println("<div class='image-btn'>");
+	                    				out.println(String.format(imageTemplate, photoUrl));
+	                    			out.println("</div>");
+	                    			
+	                    			out.println("<div class='container'>");
+					                    out.println(String.format(titleTemplate, id));;
+					                    out.println(String.format(fieldTemplate, "Model", model));
+					                    out.println(String.format(fieldTemplate, "Brand", brand));
+					                    out.println(String.format(fieldTemplate, "Engine", engineType));
+					                    out.println(String.format(fieldTemplate, "Fuel", fuelType));
+					                    out.println(String.format(fieldTemplate, "Top Speed", topSpeed));
+					                    out.println(String.format(fieldTemplate, "Plate Number", plateNumber));
+					                    out.println(String.format(fieldTemplate, "Service Time", serviceTime));
+					                    out.println(String.format(hyperlinkTemplate, "/Cab_It/update/vehicle?id=".concat(id), "<h4 id='signup-btn-2'>update</h4>"));
+					                    out.println(String.format(hyperlinkTemplate, "/Cab_It/delete/vehicle?id=".concat(id), "<h4 id='signup-btn-3'>delete</h4>"));
+				                    out.println("</div>");
+		                    	out.println("</div>");
+		                    out.println("</div>");
+	                    out.println("</div>");
+	                }
+	                session.removeAttribute("vehicle-fetch-result");
+	            }
+	            else if(fetchResult.toString().equals("not-found"))
+	            {
+	            	out.println("<center><h3>Vehicle not found!</h3></center>");
+	            }
+	            session.removeAttribute("vehicle-fetch-result");
+	        }
+	    %>
+	</body>
+</html>
